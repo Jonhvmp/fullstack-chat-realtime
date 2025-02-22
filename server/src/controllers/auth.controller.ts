@@ -5,7 +5,9 @@ import { JWT_CONFIG } from '../config/jwt.config';
 export class AuthController {
   static async register(req: Request, res: Response) {
     try {
-      const user = await AuthService.register(req.body);
+      const { user, token } = await AuthService.register(req.body);
+
+      res.cookie(JWT_CONFIG.cookieName, token, JWT_CONFIG.cookieOptions);
       res.status(201).json({ user });
     } catch (error: any) {
       res.status(400).json({ message: error.message });
@@ -37,7 +39,7 @@ export class AuthController {
 
   static logout(req: Request, res: Response) {
     res.clearCookie(JWT_CONFIG.cookieName);
-    res.json({ message: 'Logged out successfully' });
+    res.json({ message: 'Sucesso ao sair da conta.' });
   }
   // get users
   static async getUsers(req: Request, res: Response) {
@@ -58,5 +60,14 @@ export class AuthController {
       res.status(404).json({ message: error.message });
     }
   }
-}
 
+  static async me(req: Request, res: Response) {
+    try {
+      const token = req.cookies[JWT_CONFIG.cookieName];
+      const user = await AuthService.validateToken(token);
+      res.json({ user });
+    } catch (error: any) {
+      res.status(401).json({ message: error.message });
+    }
+  }
+}

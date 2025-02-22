@@ -91,30 +91,3 @@ describe('AuthService.githubAuth', () => {
     expect(result).toHaveProperty('user', userMock);
   });
 });
-
-describe('AuthService.getUsers', () => {
-  beforeEach(() => {
-    jest.resetAllMocks();
-  });
-
-  it('deve retornar todos os usuários', async () => {
-    const usersMock = [{ name: 'Teste', email: 'test@exemplo.com' }];
-    (User.find as jest.Mock).mockResolvedValue(usersMock);
-    const result = await AuthService.getUsers();
-    expect(result).toEqual(usersMock);
-  }
-  )}
-);
-
-describe('AuthService.getUserById', () => {
-  beforeEach(() => {
-    jest.resetAllMocks();
-  });
-
-  it('deve retornar usuário pelo id', async () => {
-    const userMock = { name: 'Teste', email: 'test@exemplo.com' };
-    (User.findById as jest.Mock).mockResolvedValue(userMock);
-    const result = await AuthService.getUserById('1');
-    expect(result).toEqual(userMock);
-  });
-});

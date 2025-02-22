@@ -17,5 +17,7 @@ router.get(
   AuthController.githubCallback
 );
 
+// validate token
+router.get('/validate-token', authMiddleware, AuthController.me);
 
 export default router;

@@ -26,7 +26,12 @@ export class AuthService {
       });
 
       await user.save();
-      return user;
+
+      const token = jwt.sign({ id: user._id }, JWT_CONFIG.secret, {
+        expiresIn: JWT_CONFIG.expiresIn
+      } as SignOptions);
+
+      return { user, token };
     } catch (error) {
       throw error;
     }
@@ -122,6 +127,24 @@ export class AuthService {
       if (!user) {
         throw new Error('Usuário não encontrado!');
       }
+      return user;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // validate token a partir do token
+  static async validateToken(token: string) {
+    try {
+      const payload = jwt.verify(token, JWT_CONFIG.secret) as { id: string };
+      const user = await User
+        .findById(payload.id)
+        .select('-password')
+
+      if (!user) {
+        throw new Error('Usuário não encontrado!');
+      }
+
       return user;
     } catch (error) {
       throw error;
