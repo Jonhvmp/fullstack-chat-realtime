@@ -13,7 +13,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const login = async (email: string, password: string) => {
     try {
       const response = await axios.post(
-        `http://localhost:5000/api/auth/login`,
+        `${API_URL}/api/auth/login`,
         { email, password },
         { withCredentials: true }
       )
@@ -21,6 +21,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } catch (error: unknown) {
       throw error
     }
+  }
+
+  const loginWithGithub = async () => {
+    window.location.href = `${API_URL}/api/auth/github`;
   }
 
   const logout = async () => {
@@ -37,7 +41,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       user,
       login,
       logout,
-      loginWithGithub: () => Promise.resolve(),
+      loginWithGithub,
       isAuthenticated: !!user,
       isLoading: false,
       error: null

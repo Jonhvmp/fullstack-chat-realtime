@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { AuthService } from '../services/auth.service';
 import { JWT_CONFIG } from '../config/jwt.config';
+import { IUser } from '@/models/user.model';
 
 export class AuthController {
   static async register(req: Request, res: Response) {
@@ -28,12 +29,17 @@ export class AuthController {
 
   static async githubCallback(req: Request, res: Response) {
     try {
-      const { user, token } = await AuthService.githubAuth(req.user);
+      const user = req.user as IUser;
+      if (!user) {
+        throw new Error('Autenticação falhou');
+      }
+
+      const { token } = await AuthService.githubAuth(user);
 
       res.cookie(JWT_CONFIG.cookieName, token, JWT_CONFIG.cookieOptions);
-      res.redirect(process.env.CLIENT_URL || '/');
+      res.redirect(process.env.CLIENT_URL || 'http://localhost:3000');
     } catch (error: any) {
-      res.status(401).json({ message: error.message });
+      res.redirect(`${process.env.CLIENT_URL}/login?error=${error.message}`);
     }
   }
 
