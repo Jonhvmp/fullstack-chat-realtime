@@ -310,4 +310,9 @@ router.get(
  */
 router.get('/validate-token', authMiddleware, AuthController.validateToken);
 
+router.post('/enable-2fa', authMiddleware, AuthController.enable2FA);
+router.post('/verify-2fa', authMiddleware, AuthController.verify2FA);
+router.post('/disable-2fa', authMiddleware, AuthController.disable2FA);
+
+
 export default router;

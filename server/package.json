@@ -48,6 +48,8 @@
     "@types/node": "^22.13.5",
     "@types/passport": "^1.0.17",
     "@types/passport-github2": "^1.2.9",
+    "@types/qrcode": "^1.5.5",
+    "@types/speakeasy": "^2.0.10",
     "@types/supertest": "^6.0.2",
     "ts-jest": "^29.2.5",
     "ts-node": "^10.9.2",
