@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { IUser } from '@/models/user.model';
+import User, { IUser } from '@/models/user.model';
 import { AuthService } from '../services/auth.service';
 import { JWT_CONFIG } from '../config/jwt.config';
 
@@ -173,6 +173,42 @@ export class AuthController {
       res.json({ message: '2FA desativado com sucesso' });
     } catch (error: any) {
       res.status(400).json({ message: error.message });
+    }
+  }
+
+  static async updateUser(req: Request, res: Response): Promise<void> {
+    try {
+      const userId = req.user?._id;
+      const { name, email } = req.body;
+
+      if (!name && !email) {
+        res.status(400).json({ message: 'Nenhum dado para atualizar' });
+        return
+      }
+
+      const updateData: { name?: string; email?: string } = {};
+      if (name) updateData.name = name;
+      if (email) updateData.email = email;
+
+      const updatedUser = await User.findByIdAndUpdate(
+        userId,
+        { $set: updateData },
+        { new: true }
+      );
+
+      if (!updatedUser) {
+        res.status(404).json({ message: 'Usuário não encontrado' });
+        return
+      }
+
+      res.json({
+        message: 'Usuário atualizado com sucesso',
+        user: updatedUser
+      });
+      return
+    } catch (error) {
+      res.status(500).json({ message: 'Erro ao atualizar usuário' });
+      return
     }
   }
 }

@@ -29,10 +29,10 @@ app.use(express.json());
 
 app.use(cookieParser());
 app.use(cors({
-  origin: [CORS_ALLOW],
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
+  origin: process.env.CLIENT_URL || '',
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 app.use(passport.initialize());
 
