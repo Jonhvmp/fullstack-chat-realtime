@@ -1,5 +1,6 @@
 import { Message } from '../models/message.model';
 import mongoose from 'mongoose';
+import { SocketService } from './socket.service';
 
 export interface IMessageInput {
   chat: string;
@@ -17,7 +18,13 @@ export class MessageService {
     }
 
     const newMessage = new Message(messageData);
-    return await newMessage.save();
+    const savedMessage = await newMessage.save();
+    await savedMessage.populate('sender', 'name email');
+
+    // Emitir evento de nova mensagem
+    SocketService.emitNewMessage(messageData.chat, savedMessage);
+
+    return savedMessage;
   }
 
   static async getMessagesByChatId(chatId: string) {
@@ -33,7 +40,7 @@ export class MessageService {
   }
 
   static async markMessagesAsRead(chatId: string, userId: string) {
-    return await Message.updateMany(
+    const result = await Message.updateMany(
       {
         chat: chatId,
         readBy: { $ne: userId }
@@ -42,6 +49,12 @@ export class MessageService {
         $addToSet: { readBy: userId }
       }
     );
+
+    if (result.modifiedCount > 0) {
+      SocketService.emitMessageRead(chatId, '', userId);
+    }
+
+    return result;
   }
 
   static async getUnreadCount(chatId: string, userId: string) {
