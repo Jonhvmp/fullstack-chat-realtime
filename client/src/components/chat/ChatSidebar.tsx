@@ -74,15 +74,15 @@ export function ChatSidebar() {
   };
 
   return (
-    <div className="h-full border-r">
+    <div className="h-full flex flex-col bg-background">
       <div className="px-4 py-2 border-b">
-        <div className="flex items-center justify-between">
+        <div className="flex px-2 pl-10 md:pl-4 py-1 sticky items-center justify-between">
           <h2 className="text-xl font-semibold">Chats</h2>
           <ChatCircleDots size={20} weight="light" />
         </div>
       </div>
-      <ScrollArea className="h-[calc(100vh-120px)]">
-        <div className="px-2 py-2">
+      <ScrollArea className="h-[calc(100%-4rem)]">
+        <div className="px-2 py-2 space-y-1">
           {userChats.map((chat) => {
             const otherMember = chat.members.find((member) => member._id !== user?._id);
             const isOnline = Math.random() > 0.5;
@@ -92,7 +92,7 @@ export function ChatSidebar() {
               <Button
                 key={chat._id}
                 variant="ghost"
-                className="w-full justify-start mb-1 p-2 relative"
+                className="w-full justify-start p-2 relative hover:bg-muted"
                 onClick={() => setCurrentChat(chat)}
               >
                 <div className="flex items-center w-full">

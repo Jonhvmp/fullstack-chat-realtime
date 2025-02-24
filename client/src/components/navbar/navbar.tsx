@@ -9,15 +9,16 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { User } from "lucide-react";
-import { HTMLAttributes } from "react";
+import { User, Menu } from "lucide-react";
+import { useState } from "react";
 
-const Navbar = ({ className, ...props }: HTMLAttributes<HTMLElement>) => {
+const Navbar = () => {
   const { user, isAuthenticated, logout } = useAuth();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
-    <nav className={`bg-background border-b h-16 ${className}`} {...props}>
-      <div className="h-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <nav className="bg-background border-b h-16 sticky top-0 z-50">
+      <div className="h-full max-w-7xl mx-auto px-4">
         <div className="flex items-center justify-between h-full">
           <div className="flex items-center">
             <Link href="/" className="text-xl font-bold">
@@ -25,7 +26,16 @@ const Navbar = ({ className, ...props }: HTMLAttributes<HTMLElement>) => {
             </Link>
           </div>
 
-          <div className="flex items-center gap-4">
+          {/* Mobile Menu Button */}
+          <button
+            className="md:hidden"
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+          >
+            <Menu className="h-6 w-6" />
+          </button>
+
+          {/* Desktop Navigation */}
+          <div className="hidden md:flex items-center gap-4">
             {isAuthenticated ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -53,10 +63,42 @@ const Navbar = ({ className, ...props }: HTMLAttributes<HTMLElement>) => {
               </>
             )}
           </div>
+
+          {/* Mobile Navigation */}
+          {isMenuOpen && (
+            <div className="absolute top-16 left-0 right-0 bg-background border-b md:hidden">
+              <div className="px-4 py-2 space-y-2">
+                {isAuthenticated ? (
+                  <>
+                    <div className="px-4 py-2 text-sm">{user?.email}</div>
+                    <Button
+                      variant="ghost"
+                      className="w-full text-red-600"
+                      onClick={() => {
+                        logout();
+                        setIsMenuOpen(false);
+                      }}
+                    >
+                      Sair
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button variant="ghost" className="w-full" asChild>
+                      <Link href="/login">Entrar</Link>
+                    </Button>
+                    <Button className="w-full" asChild>
+                      <Link href="/register">Registrar</Link>
+                    </Button>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </nav>
   );
 };
 
-export default Navbar;
+export { Navbar };

@@ -107,8 +107,8 @@ export function ChatBox() {
   };
 
   return (
-    <div className="h-full flex flex-col">
-      <div className="px-4 py-2 border-b flex items-center gap-3">
+    <div className="h-full flex flex-col bg-background">
+      <div className="px-4 pl-16 md:pl-4 py-2 h-[3.5rem] border-b flex items-center gap-3 sticky top-0 bg-background z-10">
         <Avatar className="h-8 w-8">
           <AvatarImage
             src={`https://github.com/${otherMember?.name}.png`}
@@ -124,7 +124,7 @@ export function ChatBox() {
       </div>
 
       <ScrollArea className="flex-1 p-4">
-        <div className="space-y-4">
+        <div className="space-y-4 max-w-3xl mx-auto">
           {messages.length === 0 ? (
             <div className="text-center text-muted-foreground">
               Nenhuma mensagem ainda
@@ -136,8 +136,8 @@ export function ChatBox() {
         </div>
       </ScrollArea>
 
-      <form onSubmit={handleSend} className="p-4 border-t">
-        <div className="flex gap-2">
+      <form onSubmit={handleSend} className="p-4 border-t sticky bottom-0 bg-background">
+        <div className="flex gap-2 max-w-3xl mx-auto">
           <Input
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
