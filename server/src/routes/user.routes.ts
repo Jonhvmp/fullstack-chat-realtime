@@ -152,4 +152,36 @@ router.get('/', authMiddleware, AuthController.getUsers);
  */
 router.get('/find/:id', authMiddleware, AuthController.getUserById);
 
+router.post('/list', authMiddleware, AuthController.getManyUsers);
+
+/**
+ * @swagger
+ * /user/update:
+ *   patch:
+ *     summary: Atualiza dados do usuário
+ *     description: Atualiza nome e email do usuário logado
+ *     tags: [Users]
+ *     security:
+ *       - cookieAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               email:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Usuário atualizado com sucesso
+ *       400:
+ *         description: Dados inválidos
+ *       401:
+ *         description: Não autorizado
+ */
+router.patch('/update', authMiddleware, AuthController.updateUser);
+
 export default router;

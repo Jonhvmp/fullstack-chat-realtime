@@ -29,10 +29,10 @@ app.use(express.json());
 
 app.use(cookieParser());
 app.use(cors({
-  origin: [CORS_ALLOW],
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
+  origin: process.env.CLIENT_URL || '',
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 app.use(passport.initialize());
 
@@ -63,12 +63,10 @@ const swaggerOptions = {
   apis: ['./src/routes/*.ts'],
 };
 
-
 const swaggerDocs = swaggerJsDoc(swaggerOptions);
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 
-
-// passando tipagem na rota ('/)
+// Rota inicial
 app.get('/', (req: Request, res: Response): void => {
   res.json({ message: 'API rodando...' });
 });
@@ -79,7 +77,7 @@ app.use('/user', UserRoutes);
 app.use('/chat', ChatRoutes);
 app.use('/message', MessageRoutes);
 
-// Passando uma mensagem dinâmica para o middleware de erro
+// Rota inexistente
 app.use((req: Request, res: Response, next: NextFunction): void => {
   res.status(404).json({ message: 'Rota não encontrada' });
 });

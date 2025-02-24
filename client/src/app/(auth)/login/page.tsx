@@ -9,6 +9,8 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { GithubIcon } from 'lucide-react'
 import Link from 'next/link'
+import { TwoFactorAuthDialog } from '@/components/auth/TwoFactorAuthDialog'
+import axios from 'axios'
 
 export default function LoginPage() {
   const { login, SignInOrSignUpWithGithub } = useAuth()
@@ -16,17 +18,56 @@ export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
+  const [show2FADialog, setShow2FADialog] = useState(false)
+  const [loading2FA, setLoading2FA] = useState(false)
+  const [error2FA, setError2FA] = useState<{ message: string; details?: string } | null>(null)
 
   const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
+    setError('');
+
     try {
-      await login(email, password)
-      router.push('/chat')
-    } catch (err: Error | unknown) {
-      const errorMessage = err instanceof Error ? err.message : 'Erro ao efetuar login'
-      setError(errorMessage)
+      const response = await login(email, password);
+
+      // Se o retorno indicar necessidade de 2FA
+      if ('require2FA' in response) {
+        setShow2FADialog(true);
+        return;
+      }
+
+      router.push('/chat');
+    } catch (err) {
+      if (axios.isAxiosError(err)) {
+        setError(err.response?.data?.message || 'Erro ao efetuar login');
+      } else {
+        setError('Erro ao efetuar login');
+      }
     }
-  }
+  };
+
+  const handle2FASubmit = async (code: string) => {
+    setLoading2FA(true);
+    setError2FA(null);
+
+    try {
+      await login(email, password, code);
+      setShow2FADialog(false);
+      router.push('/chat');
+    } catch (err) {
+      if (axios.isAxiosError(err)) {
+        setError2FA({
+          message: err.response?.data?.message || 'Erro ao verificar código 2FA',
+          details: err.response?.data?.details
+        });
+      } else {
+        setError2FA({
+          message: 'Erro ao verificar código 2FA'
+        });
+      }
+    } finally {
+      setLoading2FA(false);
+    }
+  };
 
   const handleGithubLogin = async () => {
     try {
@@ -90,6 +131,14 @@ export default function LoginPage() {
           </div>
         </CardContent>
       </Card>
+
+      <TwoFactorAuthDialog
+        open={show2FADialog}
+        onOpenChange={setShow2FADialog}
+        onSubmit={handle2FASubmit}
+        error={error2FA}
+        loading={loading2FA}
+      />
     </div>
   )
 }

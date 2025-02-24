@@ -1,5 +1,6 @@
-import { IUser } from '../models/user.model';
-import User from '../models/user.model';
+import User, { IUser } from '../models/user.model';
+import speakeasy from 'speakeasy';
+import QRCode from 'qrcode';
 import jwt, { SignOptions } from 'jsonwebtoken';
 import { JWT_CONFIG } from '../config/jwt.config';
 
@@ -123,6 +124,113 @@ export class AuthService {
 
       return user;
     } catch (error) {
+      throw error;
+    }
+  }
+
+  static async getManyUsers(userIds: string[]) {
+    return await User.find({ _id: { $in: userIds } });
+  }
+
+  static async enable2FA(userId: string) {
+    const secret = speakeasy.generateSecret({
+      name: 'Chat RealTime (user ' + userId + ')',
+      length: 20,
+    });
+
+    const user = await User.findById(userId);
+    if (!user) throw new Error('Usuário não encontrado');
+
+    user.twoFactorSecret = secret.base32;
+    await user.save();
+
+    const otpauthUrl = secret.otpauth_url;
+
+    if (!otpauthUrl) {
+      throw new Error('Falha ao gerar URL 2FA');
+    }
+    const qrDataUrl = await QRCode.toDataURL(otpauthUrl);
+
+    return { otpauthUrl, qrDataUrl };
+  }
+
+  static async verify2FA(userId: string, token: string) {
+    try {
+      const user = await User.findById(userId).select('+twoFactorSecret');
+      if (!user) {
+        throw new Error('Usuário não encontrado');
+      }
+
+      if (!user.twoFactorSecret) {
+        throw new Error('2FA não foi configurado para esse usuário');
+      }
+
+      const verified = speakeasy.totp.verify({
+        secret: user.twoFactorSecret,
+        encoding: 'base32',
+        token,
+        window: 2
+      });
+
+      if (!verified) {
+        throw new Error('Código 2FA inválido');
+      }
+
+      user.twoFactorEnabled = true;
+      await user.save();
+
+      return { success: true };
+    } catch (error) {
+      console.error('Erro na verificação 2FA:', error);
+      throw error;
+    }
+  }
+
+  static async check2FA(userId: string, token2FA: string): Promise<boolean> {
+    const user = await User.findById(userId).select('+twoFactorSecret');
+    if (!user || !user.twoFactorSecret) {
+      return false;
+    }
+
+    return speakeasy.totp.verify({
+      secret: user.twoFactorSecret,
+      encoding: 'base32',
+      token: token2FA,
+      window: 1,
+    });
+  }
+
+  static async disable2FA(userId: string, token: string) {
+    try {
+      const user = await User.findById(userId).select('+twoFactorSecret');
+      if (!user) {
+        throw new Error('Usuário não encontrado');
+      }
+
+      if (!user.twoFactorSecret || !user.twoFactorEnabled) {
+        throw new Error('2FA não está ativo para este usuário');
+      }
+
+      // Verifica o token antes de desativar
+      const isValid = speakeasy.totp.verify({
+        secret: user.twoFactorSecret,
+        encoding: 'base32',
+        token,
+        window: 2
+      });
+
+      if (!isValid) {
+        throw new Error('Código 2FA inválido');
+      }
+
+      // Desativa 2FA e limpa o secret
+      user.twoFactorEnabled = false;
+      user.twoFactorSecret = undefined;
+      await user.save();
+
+      return { success: true };
+    } catch (error) {
+      console.error('Erro ao desativar 2FA:', error);
       throw error;
     }
   }

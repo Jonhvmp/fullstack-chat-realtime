@@ -6,6 +6,7 @@ export interface IMessage extends Document {
   content: string;
   createdAt: Date;
   updatedAt: Date;
+  readBy: mongoose.Types.ObjectId[];
 }
 
 const MessageSchema: Schema = new Schema(
@@ -24,6 +25,10 @@ const MessageSchema: Schema = new Schema(
       type: String,
       required: true
     },
+    readBy: [{
+      type: Schema.Types.ObjectId,
+      ref: 'User'
+    }],
   },
   {
     timestamps: true,

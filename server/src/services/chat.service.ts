@@ -2,10 +2,7 @@ import { Chat } from '../models/chat.model';
 
 export class ChatService {
   static async createChat(firstId: string, secondId: string) {
-    if (!firstId || !secondId) {
-      throw new Error('Ambos firstId e secondId são obrigatórios.');
-    }
-
+    // Verifica se já existe um chat com esses 2 membros
     const existingChat = await Chat.findOne({
       $and: [
         { members: { $all: [firstId, secondId] } },
@@ -13,10 +10,12 @@ export class ChatService {
       ]
     });
 
+    // Se existir, retorna
     if (existingChat) {
       return existingChat;
     }
 
+    // Se não existir, cria
     const newChat = new Chat({ members: [firstId, secondId] });
     await newChat.save();
     return newChat;
@@ -27,7 +26,9 @@ export class ChatService {
       throw new Error('O parâmetro userId é obrigatório.');
     }
 
-    const chats = await Chat.find({ members: userId }).sort({ updatedAt: -1 });
+    const chats = await Chat.find({ members: userId })
+       .populate('members', 'name email')
+      .sort({ updatedAt: -1 });
     return chats;
   }
 

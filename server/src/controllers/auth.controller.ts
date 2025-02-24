@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
+import User, { IUser } from '@/models/user.model';
 import { AuthService } from '../services/auth.service';
 import { JWT_CONFIG } from '../config/jwt.config';
-import { IUser } from '@/models/user.model';
 
 export class AuthController {
   static async register(req: Request, res: Response) {
@@ -15,15 +15,38 @@ export class AuthController {
     }
   }
 
-  static async login(req: Request, res: Response) {
+  static async login(req: Request, res: Response): Promise<void> {
     try {
-      const { email, password } = req.body;
-      const { user, token } = await AuthService.login(email, password);
+      const { email, password, token2FA } = req.body;
+      const { user, token } = await AuthService.login(email, password) as unknown as { user: IUser & { _id: string }, token: string };
+
+      if (user.twoFactorEnabled) {
+        if (!token2FA) {
+          res.status(206).json({
+            partialLogin: true,
+            message: '2FA requerido',
+            userId: user._id
+          });
+          return;
+        }
+
+        const is2FAValid = await AuthService.check2FA(user._id.toString(), token2FA);
+        if (!is2FAValid) {
+          res.status(401).json({
+            message: 'Código 2FA inválido',
+            error: 'INVALID_2FA_TOKEN'
+          });
+          return;
+        }
+      }
 
       res.cookie(JWT_CONFIG.cookieName, token, JWT_CONFIG.cookieOptions);
       res.json({ user });
     } catch (error: any) {
-      res.status(401).json({ message: error.message });
+      res.status(401).json({
+        message: error.message,
+        error: error.code || 'AUTH_ERROR'
+      });
     }
   }
 
@@ -74,6 +97,118 @@ export class AuthController {
       res.json({ user });
     } catch (error: any) {
       res.status(401).json({ message: error.message });
+    }
+  }
+
+  static async getManyUsers(req: Request, res: Response): Promise<void> {
+    try {
+      const { userIds } = req.body;
+      if (!Array.isArray(userIds)) {
+        res.status(400).json({ message: 'userIds deve ser um array' });
+        return
+      }
+
+      const users = await AuthService.getManyUsers(userIds);
+      res.json(users);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  }
+
+  static async enable2FA(req: Request, res: Response): Promise<void> {
+    try {
+      if (!req.user) {
+        res.status(401).json({ message: 'Não autenticado' });
+        return;
+      }
+
+      const userId = req.user._id as string;
+
+      // Gera secret e QR code
+      const { otpauthUrl, qrDataUrl } = await AuthService.enable2FA(userId);
+
+      // Retorna a URL para gerar QR code e a imagem em base64
+      res.json({ otpauthUrl, qrDataUrl });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  }
+
+  static async verify2FA(req: Request, res: Response): Promise<void> {
+    try {
+      const userId = req.user?._id;
+      if (!userId) {
+        res.status(401).json({ message: 'Não autenticado' });
+        return;
+      }
+
+      const { token } = req.body;
+      if (!token) {
+        res.status(400).json({ message: 'Token é obrigatório' });
+        return;
+      }
+
+      await AuthService.verify2FA(userId.toString(), token);
+      res.json({ message: '2FA habilitado com sucesso' });
+    } catch (error: any) {
+      res.status(400).json({ message: error.message });
+    }
+  }
+
+    static async disable2FA(req: Request, res: Response): Promise<void> {
+    try {
+      const userId = req.user?._id;
+      if (!userId) {
+        res.status(401).json({ message: 'Não autenticado' });
+        return;
+      }
+
+      const { token } = req.body;
+      if (!token) {
+        res.status(400).json({ message: 'Token é obrigatório' });
+        return;
+      }
+
+      await AuthService.disable2FA(userId.toString(), token);
+      res.json({ message: '2FA desativado com sucesso' });
+    } catch (error: any) {
+      res.status(400).json({ message: error.message });
+    }
+  }
+
+  static async updateUser(req: Request, res: Response): Promise<void> {
+    try {
+      const userId = req.user?._id;
+      const { name, email } = req.body;
+
+      if (!name && !email) {
+        res.status(400).json({ message: 'Nenhum dado para atualizar' });
+        return
+      }
+
+      const updateData: { name?: string; email?: string } = {};
+      if (name) updateData.name = name;
+      if (email) updateData.email = email;
+
+      const updatedUser = await User.findByIdAndUpdate(
+        userId,
+        { $set: updateData },
+        { new: true }
+      );
+
+      if (!updatedUser) {
+        res.status(404).json({ message: 'Usuário não encontrado' });
+        return
+      }
+
+      res.json({
+        message: 'Usuário atualizado com sucesso',
+        user: updatedUser
+      });
+      return
+    } catch (error) {
+      res.status(500).json({ message: 'Erro ao atualizar usuário' });
+      return
     }
   }
 }

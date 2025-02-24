@@ -310,4 +310,118 @@ router.get(
  */
 router.get('/validate-token', authMiddleware, AuthController.validateToken);
 
+/**
+ * @swagger
+ * /api/auth/enable-2fa:
+ *   post:
+ *     summary: Habilitar autenticação de dois fatores (2FA)
+ *     description: Gera um segredo 2FA e retorna um QR code para configuração.
+ *     tags: [Auth]
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: QR code e URL gerados com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 otpauthUrl:
+ *                   type: string
+ *                   description: URL para geração do código 2FA
+ *                 qrDataUrl:
+ *                   type: string
+ *                   description: QR code em formato base64
+ *       401:
+ *         description: Usuário não autenticado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Não autenticado"
+ */
+router.post('/enable-2fa', authMiddleware, AuthController.enable2FA);
+
+/**
+ * @swagger
+ * /api/auth/verify-2fa:
+ *   post:
+ *     summary: Verificar e ativar 2FA
+ *     description: Verifica o token 2FA fornecido e ativa a autenticação de dois fatores.
+ *     tags: [Auth]
+ *     security:
+ *       - cookieAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - token
+ *             properties:
+ *               token:
+ *                 type: string
+ *                 description: Token 2FA gerado pelo aplicativo autenticador
+ *     responses:
+ *       200:
+ *         description: 2FA verificado e ativado com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "2FA habilitado com sucesso"
+ *       400:
+ *         description: Token inválido ou ausente
+ *       401:
+ *         description: Não autenticado
+ */
+router.post('/verify-2fa', authMiddleware, AuthController.verify2FA);
+
+/**
+ * @swagger
+ * /api/auth/disable-2fa:
+ *   post:
+ *     summary: Desativar 2FA
+ *     description: Desativa a autenticação de dois fatores para o usuário.
+ *     tags: [Auth]
+ *     security:
+ *       - cookieAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - token
+ *             properties:
+ *               token:
+ *                 type: string
+ *                 description: Último token 2FA para confirmação
+ *     responses:
+ *       200:
+ *         description: 2FA desativado com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "2FA desativado com sucesso"
+ *       400:
+ *         description: Token inválido ou ausente
+ *       401:
+ *         description: Não autenticado
+ */
+router.post('/disable-2fa', authMiddleware, AuthController.disable2FA);
+
 export default router;
