@@ -18,7 +18,7 @@ server.listen(PORT, () => {
 
 server.on('error', (err: any) => {
   if (err.code === 'EADDRINUSE') {
-    console.error(`Port ${PORT} é inválida`);
+    console.error(`Port ${PORT} é inválida ou já está em uso`);
     process.exit(1);
   } else {
     throw err;
