@@ -27,7 +27,7 @@ export class SocketService {
 
     // Lida com as conexões de clientes
     this.io.on('connection', (socket: Socket) => {
-      console.log(`Novo cliente conectado: ${socket.id}`);
+      // console.log(`Novo cliente conectado: ${socket.id}`);
 
       /**
        * Evento para definir o usuário conectado (ex.: socket.emit('setUser', userId)).
@@ -45,7 +45,7 @@ export class SocketService {
         }
         SocketService.onlineUsers[userId].push(socket.id);
 
-        console.log(`Usuário ${userId} conectado com socket ${socket.id}`);
+        // console.log(`Usuário ${userId} conectado com socket ${socket.id}`);
 
         // Emite a lista atualizada de usuários online para todos os clientes
         SocketService.io.emit('onlineUsers', Object.keys(SocketService.onlineUsers));
@@ -56,7 +56,7 @@ export class SocketService {
        */
       socket.on('joinChat', (chatId: string) => {
         socket.join(chatId);
-        console.log(`Socket ${socket.id} entrou na sala do chat ${chatId}`);
+        // console.log(`Socket ${socket.id} entrou na sala do chat ${chatId}`);
       });
 
       /**
@@ -96,12 +96,12 @@ export class SocketService {
        * Eventos de digitação
        */
       socket.on('typing', ({ chatId, userId }) => {
-        console.log(`[Server] Usuário ${userId} está digitando no chat ${chatId}`);
+        // console.log(`[Server] Usuário ${userId} está digitando no chat ${chatId}`);
         socket.to(chatId).emit('userTyping', { userId, chatId });
       });
 
       socket.on('stopTyping', ({ chatId, userId }) => {
-        console.log(`[Server] Usuário ${userId} parou de digitar no chat ${chatId}`);
+        // console.log(`[Server] Usuário ${userId} parou de digitar no chat ${chatId}`);
         socket.to(chatId).emit('userStoppedTyping', { userId, chatId });
       });
 
@@ -110,7 +110,7 @@ export class SocketService {
        * Ao desconectar, remove o socket da lista de usuários online.
        */
       socket.on('disconnect', () => {
-        console.log(`Cliente desconectado: ${socket.id}`);
+        // console.log(`Cliente desconectado: ${socket.id}`);
         const userId = socket.data.userId;
 
         if (userId && SocketService.onlineUsers[userId]) {

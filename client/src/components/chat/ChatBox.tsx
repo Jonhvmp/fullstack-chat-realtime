@@ -31,7 +31,7 @@ export function ChatBox() {
   useEffect(() => {
     const loadMessages = async () => {
       if (currentChat?._id && user?._id) {
-        console.log("Buscando mensagens para o chat:", currentChat._id);
+        // console.log("Buscando mensagens para o chat:", currentChat._id);
         await fetchMessages(currentChat._id);
         // Marcar mensagens como lidas quando abrir o chat
         await markMessagesAsRead(currentChat._id, user._id);
@@ -131,23 +131,23 @@ export function ChatBox() {
   // Atualizar renderTypingIndicator para debug
   const renderTypingIndicator = () => {
     if (!currentChat) {
-      console.log("Sem chat atual");
+      // console.log("Sem chat atual");
       return null;
     }
 
-    console.log("Estado atual de typingUsers:", typingUsers);
+    // console.log("Estado atual de typingUsers:", typingUsers);
     const typingUserIds = typingUsers[currentChat._id] || [];
-    console.log("Usuários digitando no chat atual:", typingUserIds);
+    // console.log("Usuários digitando no chat atual:", typingUserIds);
 
     if (typingUserIds.length === 0) {
-      console.log("Nenhum usuário digitando");
+      // console.log("Nenhum usuário digitando");
       return null;
     }
 
     const typingMembers = currentChat.members.filter(
       member => typingUserIds.includes(member._id) && member._id !== user?._id
     );
-    console.log("Membros encontrados digitando:", typingMembers);
+    // console.log("Membros encontrados digitando:", typingMembers);
 
     return (
       <div className="flex items-center gap-2 text-sm text-muted-foreground px-4 py-2">

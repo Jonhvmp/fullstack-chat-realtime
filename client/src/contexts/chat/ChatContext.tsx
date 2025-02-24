@@ -142,32 +142,32 @@ export function ChatProvider({ children }: ChatProviderProps) {
 
     // Lista de IDs online
     socket.on("onlineUsers", (userIds: string[]) => {
-      console.log("Usuários online recebidos:", userIds);
+      // console.log("Usuários online recebidos:", userIds);
       setOnlineUserIds(userIds);
     });
 
     // Quando um usuário começa a digitar
     socket.on("userTyping", ({ userId, chatId }) => {
-      console.log("Recebido userTyping:", { userId, chatId });
+      // console.log("Recebido userTyping:", { userId, chatId });
       setTypingUsers(prev => {
         const newTypingUsers = {
           ...prev,
           [chatId]: [...(prev[chatId] || []), userId]
         };
-        console.log("Novo estado de typingUsers:", newTypingUsers);
+        // console.log("Novo estado de typingUsers:", newTypingUsers);
         return newTypingUsers;
       });
     });
 
     // Quando um usuário para de digitar
     socket.on("userStoppedTyping", ({ userId, chatId }) => {
-      console.log("Recebido userStoppedTyping:", { userId, chatId });
+      // console.log("Recebido userStoppedTyping:", { userId, chatId });
       setTypingUsers(prev => {
         const newTypingUsers = {
           ...prev,
           [chatId]: (prev[chatId] || []).filter(id => id !== userId)
         };
-        console.log("Novo estado de typingUsers após parar:", newTypingUsers);
+        // console.log("Novo estado de typingUsers após parar:", newTypingUsers);
         return newTypingUsers;
       });
     });
@@ -204,7 +204,7 @@ export function ChatProvider({ children }: ChatProviderProps) {
   useEffect(() => {
     if (socket && currentChat) {
       socket.emit("joinChat", currentChat._id);
-      console.log(`Entrou na sala do chat: ${currentChat._id}`);
+      // console.log(`Entrou na sala do chat: ${currentChat._id}`);
     }
   }, [socket, currentChat]);
 
@@ -213,10 +213,20 @@ export function ChatProvider({ children }: ChatProviderProps) {
     if (!socket) return;
 
     const handleChatUpdated = async (payload: { chatId: string; lastMessage: string }) => {
-      console.log("chatUpdated:", payload);
+      // console.log("chatUpdated:", payload);
+
       if (user?._id) {
         await fetchUserChats(user._id);
       }
+
+      // Atualiza lastMessages
+      setLastMessages(prev => ({
+        ...prev,
+        [payload.chatId]: {
+          ...prev[payload.chatId],
+          content: payload.lastMessage
+        }
+      }));
     };
 
     socket.on("chatUpdated", handleChatUpdated);
@@ -342,7 +352,7 @@ export function ChatProvider({ children }: ChatProviderProps) {
   // -------------------------
   const stopTyping = useCallback((chatId: string) => {
     if (!socket || !user?._id) {
-      console.log("Socket ou usuário não disponível para stop typing");
+      // console.log("Socket ou usuário não disponível para stop typing");
       return;
     }
 
@@ -352,7 +362,7 @@ export function ChatProvider({ children }: ChatProviderProps) {
       delete typingTimeoutRef.current[chatId];
     }
 
-    console.log("Emitindo stopTyping...", { chatId, userId: user._id });
+    // console.log("Emitindo stopTyping...", { chatId, userId: user._id });
     socket.emit("stopTyping", { chatId, userId: user._id });
   }, [socket, user?._id]);
 
@@ -361,7 +371,7 @@ export function ChatProvider({ children }: ChatProviderProps) {
   // -------------------------
   const startTyping = useCallback((chatId: string) => {
     if (!socket || !user?._id) {
-      console.log("Socket ou usuário não disponível para typing");
+      // console.log("Socket ou usuário não disponível para typing");
       return;
     }
 
@@ -373,13 +383,13 @@ export function ChatProvider({ children }: ChatProviderProps) {
       }
     } else {
       // Se não está digitando ainda, emite o evento
-      console.log("Emitindo typing...", { chatId, userId: user._id });
+      // console.log("Emitindo typing...", { chatId, userId: user._id });
       socket.emit("typing", { chatId, userId: user._id });
     }
 
     // Define novo timeout para parar de digitar
     typingTimeoutRef.current[chatId] = setTimeout(() => {
-      console.log("Timeout atingido, parando de digitar...");
+      // console.log("Timeout atingido, parando de digitar...");
       stopTyping(chatId);
     }, 3000);
   }, [socket, user?._id, stopTyping, typingUsers]); // Adicionar typingUsers como dependência
