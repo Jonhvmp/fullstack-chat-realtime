@@ -21,8 +21,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         })
         setUser(response.data.user)
       } catch (error) {
-        console.error('Erro ao verificar autenticação:', error)
-        setUser(null)
+        // Se for erro 401, apenas limpa o usuário silenciosamente
+        if (axios.isAxiosError(error) && error.response?.status === 401) {
+          setUser(null);
+        } else {
+          console.error('Erro ao verificar autenticação:', error)
+          setUser(null)
+        }
       } finally {
         setLoading(false)
       }
@@ -31,18 +36,28 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     checkAuth()
   }, [])
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string, token2FA?: string) => {
     try {
       const response = await axios.post(
         `${API_URL}/api/auth/login`,
-        { email, password },
+        { email, password, token2FA },
         { withCredentials: true }
-      )
-      setUser(response.data.user)
-    } catch (error: unknown) {
-      throw error
+      );
+
+      if (response.status === 206) {
+        return { require2FA: true };
+      }
+
+      setUser(response.data.user);
+      return { success: true, user: response.data.user };
+
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response?.status === 206) {
+        return { require2FA: true };
+      }
+      throw error;
     }
-  }
+  };
 
   const SignInOrSignUpWithGithub = async () => {
     window.location.href = `${API_URL}/api/auth/github`;

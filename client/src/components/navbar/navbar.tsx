@@ -32,7 +32,7 @@ const Navbar = () => {
       <div className="h-full max-w-7xl mx-auto px-4">
         <div className="flex items-center justify-between h-full">
           <div className="flex items-center">
-            <Link href="/" className="text-xl font-bold">
+            <Link href="/chat" className="text-xl font-bold">
               Chat Realtime
             </Link>
           </div>
@@ -84,6 +84,9 @@ const Navbar = () => {
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem className="text-sm">
                     {user?.email}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/user">Configurações</Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => logout()}
@@ -139,6 +142,13 @@ const Navbar = () => {
                 {isAuthenticated ? (
                   <>
                     <div className="px-4 py-2 text-sm">{user?.email}</div>
+                    <Button
+                      variant="ghost"
+                      className="w-full"
+                      asChild
+                    >
+                      <Link href="/user">Configurações</Link>
+                    </Button>
                     <Button
                       variant="ghost"
                       className="w-full text-red-600"
