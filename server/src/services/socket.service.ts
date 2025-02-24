@@ -93,6 +93,19 @@ export class SocketService {
       });
 
       /**
+       * Eventos de digitação
+       */
+      socket.on('typing', ({ chatId, userId }) => {
+        console.log(`[Server] Usuário ${userId} está digitando no chat ${chatId}`);
+        socket.to(chatId).emit('userTyping', { userId, chatId });
+      });
+
+      socket.on('stopTyping', ({ chatId, userId }) => {
+        console.log(`[Server] Usuário ${userId} parou de digitar no chat ${chatId}`);
+        socket.to(chatId).emit('userStoppedTyping', { userId, chatId });
+      });
+
+      /**
        * Evento de desconexão.
        * Ao desconectar, remove o socket da lista de usuários online.
        */
