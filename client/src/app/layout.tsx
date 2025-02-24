@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import React from 'react';
-import { AuthProvider } from '@/contexts/auth/AuthContext';
-import { ChatProvider } from '@/contexts/chat/ChatContext';
-import { Navbar } from '@/components/navbar/navbar';
+import React from "react";
+import { AuthProvider } from "@/contexts/auth/AuthContext";
+import { Navbar } from "@/components/navbar/navbar";
+import { ClientProviders } from "@src/components/ClientProviders";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -23,21 +23,21 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
     <html lang="en" className="h-full">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased h-full`}>
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} antialiased h-full`}
+      >
         <AuthProvider>
-          <ChatProvider>
-            <div className="flex flex-col h-full">
-              <Navbar />
-              <main className="flex-1 overflow-hidden">
-                {children}
-              </main>
+          <ClientProviders>
+              <div className="flex flex-col h-full">
+                <Navbar />
+                <main className="flex-1 overflow-hidden">{children}</main>
             </div>
-          </ChatProvider>
+            </ClientProviders>
         </AuthProvider>
       </body>
     </html>
