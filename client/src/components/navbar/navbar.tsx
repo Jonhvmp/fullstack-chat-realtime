@@ -11,10 +11,21 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { User, Menu } from "lucide-react";
 import { useState } from "react";
+import { useChat } from "@/contexts/chat/ChatContext";
 
 const Navbar = () => {
   const { user, isAuthenticated, logout } = useAuth();
+  const { onlineUsers, createChatWithUser } = useChat();
+
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  // Filtra os usuários online para não incluir a si mesmo
+  const otherOnlineUsers = onlineUsers.filter((u) => u._id !== user?._id);
+
+  const handleCreateChat = (otherUserId: string) => {
+    if (!user?._id) return;
+    createChatWithUser(otherUserId, user._id);
+  };
 
   return (
     <nav className="bg-background border-b h-16 sticky top-0 z-50">
@@ -36,6 +47,33 @@ const Navbar = () => {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-4">
+            {/* Dropdown para usuários online */}
+            {isAuthenticated && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline">
+                    Usuários Online
+                  </Button>
+                </DropdownMenuTrigger>
+
+                <DropdownMenuContent align="end">
+                  {otherOnlineUsers.length === 0 && (
+                    <DropdownMenuItem disabled className="text-sm">
+                      Nenhum outro usuário online
+                    </DropdownMenuItem>
+                  )}
+                  {otherOnlineUsers.map((u) => (
+                    <DropdownMenuItem
+                      key={u._id}
+                      onClick={() => handleCreateChat(u._id)}
+                    >
+                      {u.name || u.email}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+
             {isAuthenticated ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -47,7 +85,10 @@ const Navbar = () => {
                   <DropdownMenuItem className="text-sm">
                     {user?.email}
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => logout()} className="text-red-600">
+                  <DropdownMenuItem
+                    onClick={() => logout()}
+                    className="text-red-600"
+                  >
                     Sair
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -68,6 +109,33 @@ const Navbar = () => {
           {isMenuOpen && (
             <div className="absolute top-16 left-0 right-0 bg-background border-b md:hidden">
               <div className="px-4 py-2 space-y-2">
+                {isAuthenticated && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" className="w-full justify-start">
+                        Usuários Online
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="w-[calc(100vw-2rem)] mx-4">
+                      {otherOnlineUsers.length === 0 && (
+                        <DropdownMenuItem disabled className="text-sm">
+                          Nenhum outro usuário online
+                        </DropdownMenuItem>
+                      )}
+                      {otherOnlineUsers.map((u) => (
+                        <DropdownMenuItem
+                          key={u._id}
+                          onClick={() => {
+                            handleCreateChat(u._id);
+                            setIsMenuOpen(false);
+                          }}
+                        >
+                          {u.name || u.email}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
                 {isAuthenticated ? (
                   <>
                     <div className="px-4 py-2 text-sm">{user?.email}</div>
