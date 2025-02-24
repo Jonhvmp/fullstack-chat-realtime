@@ -1,4 +1,5 @@
 import { Message } from '../models/message.model';
+import mongoose from 'mongoose';
 
 export interface IMessageInput {
   chat: string;
@@ -26,6 +27,28 @@ export class MessageService {
       throw error;
     }
 
-    return await Message.find({ chat: chatId }).sort({ createdAt: 1 });
+    return await Message.find({ chat: chatId })
+      .populate('sender', 'name email')
+      .sort({ createdAt: 1 });
+  }
+
+  static async markMessagesAsRead(chatId: string, userId: string) {
+    return await Message.updateMany(
+      {
+        chat: chatId,
+        readBy: { $ne: userId }
+      },
+      {
+        $addToSet: { readBy: userId }
+      }
+    );
+  }
+
+  static async getUnreadCount(chatId: string, userId: string) {
+    return await Message.countDocuments({
+      chat: chatId,
+      sender: { $ne: userId },
+      readBy: { $ne: userId }
+    });
   }
 }
