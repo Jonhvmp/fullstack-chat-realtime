@@ -47,6 +47,13 @@ const Navbar = () => {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-4">
+            {/* Botão de Chat */}
+            {isAuthenticated && (
+              <Button variant="outline" asChild>
+                <Link href="/chat">Chat</Link>
+              </Button>
+            )}
+
             {/* Dropdown para usuários online */}
             {isAuthenticated && (
               <DropdownMenu>
@@ -113,31 +120,36 @@ const Navbar = () => {
             <div className="absolute top-16 left-0 right-0 bg-background border-b md:hidden">
               <div className="px-4 py-2 space-y-2">
                 {isAuthenticated && (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="outline" className="w-full justify-start">
-                        Usuários Online
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent className="w-[calc(100vw-2rem)] mx-4">
-                      {otherOnlineUsers.length === 0 && (
-                        <DropdownMenuItem disabled className="text-sm">
-                          Nenhum outro usuário online
-                        </DropdownMenuItem>
-                      )}
-                      {otherOnlineUsers.map((u) => (
-                        <DropdownMenuItem
-                          key={u._id}
-                          onClick={() => {
-                            handleCreateChat(u._id);
-                            setIsMenuOpen(false);
-                          }}
-                        >
-                          {u.name || u.email}
-                        </DropdownMenuItem>
-                      ))}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  <>
+                    <Button variant="outline" className="w-full" asChild>
+                      <Link href="/chat">Chat</Link>
+                    </Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="outline" className="w-full justify-start">
+                          Usuários Online
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent className="w-[calc(100vw-2rem)] mx-4">
+                        {otherOnlineUsers.length === 0 && (
+                          <DropdownMenuItem disabled className="text-sm">
+                            Nenhum outro usuário online
+                          </DropdownMenuItem>
+                        )}
+                        {otherOnlineUsers.map((u) => (
+                          <DropdownMenuItem
+                            key={u._id}
+                            onClick={() => {
+                              handleCreateChat(u._id);
+                              setIsMenuOpen(false);
+                            }}
+                          >
+                            {u.name || u.email}
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </>
                 )}
                 {isAuthenticated ? (
                   <>
