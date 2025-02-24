@@ -4,6 +4,7 @@ import { createContext, useContext, useState, useEffect, ReactNode } from 'react
 import { useRouter } from 'next/navigation'
 import axios from 'axios'
 import { IUser, AuthContextType } from './types'
+import api from '@src/services/api'
 const AuthContext = createContext<AuthContextType>({} as AuthContextType)
 
 const API_URL = process.env.NEXT_PUBLIC_SERVER_URL
@@ -76,6 +77,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }
 
+  const updateUser = async (userData: { name?: string; email?: string }) => {
+    try {
+      const response = await api.patch('/user/update', userData);
+      setUser(response.data.user);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  };
+
   return (
     <AuthContext.Provider value={{
       user,
@@ -84,7 +95,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       SignInOrSignUpWithGithub,
       isAuthenticated: !!user,
       isLoading: loading,
-      error: null
+      error: null,
+      updateUser,
     }}>
       {children}
     </AuthContext.Provider>

@@ -20,7 +20,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 
 export default function UserPage() {
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
   const {
     qrCodeImage,
     twoFaCode,
@@ -36,6 +36,11 @@ export default function UserPage() {
 
   const [confirmDisable, setConfirmDisable] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [formData, setFormData] = useState({
+    name: user?.name || '',
+    email: user?.email || ''
+  });
 
   const copyOtpauthUrl = async () => {
     try {
@@ -62,6 +67,17 @@ export default function UserPage() {
     setTwoFaCode(numericValue);
   };
 
+  const handleUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await updateUser(formData);
+      setIsEditing(false);
+      toast.success('Dados atualizados com sucesso!');
+    } catch {
+      toast.error('Erro ao atualizar dados');
+    }
+  };
+
   return (
     <div className="container mx-auto py-6 overflow-y-auto max-h-[calc(100vh-64px)]">
       <Card className="max-w-md mx-auto mb-6">
@@ -70,10 +86,53 @@ export default function UserPage() {
           <CardDescription>Gerencie suas informações e segurança</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div>
-            <p><strong>Nome:</strong> {user?.name}</p>
-            <p><strong>Email:</strong> {user?.email}</p>
-          </div>
+          {isEditing ? (
+            <form onSubmit={handleUpdate} className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Nome:</label>
+                <Input
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Email:</label>
+                <Input
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  type="email"
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button type="submit">Salvar</Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsEditing(false)}
+                >
+                  Cancelar
+                </Button>
+              </div>
+            </form>
+          ) : (
+            <div>
+              <div className="flex justify-between items-center">
+                <div>
+                  <p><strong>Nome:</strong> {user?.name}</p>
+                  <p><strong>Email:</strong> {user?.email}</p>
+                </div>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setFormData({ name: user?.name || '', email: user?.email || '' });
+                    setIsEditing(true);
+                  }}
+                >
+                  Editar
+                </Button>
+              </div>
+            </div>
+          )}
           <hr />
 
           <div>
