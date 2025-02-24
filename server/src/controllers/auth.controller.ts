@@ -67,7 +67,7 @@ export class AuthController {
     }
   }
 
-  static async me(req: Request, res: Response) {
+  static async validateToken(req: Request, res: Response) {
     try {
       const token = req.cookies[JWT_CONFIG.cookieName];
       const user = await AuthService.validateToken(token);
