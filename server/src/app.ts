@@ -12,8 +12,12 @@ import './config/passport';
 import AuthRoutes from './routes/auth.routes';
 import UserRoutes from './routes/user.routes';
 import ChatRoutes from './routes/chat.routes';
+import MessageRoutes from './routes/message.routes';
 
 const app = express();
+
+const CORS_ALLOW = process.env.CORS_ORIGIN || '';
+const URL_DOCS_API = process.env.BASE_URL || '';
 
 // Conexão com o banco de dados - MongoDb
 connectDB();
@@ -25,7 +29,7 @@ app.use(express.json());
 
 app.use(cookieParser());
 app.use(cors({
-  origin: ["http://localhost:3000"],
+  origin: [CORS_ALLOW],
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true,
@@ -43,7 +47,7 @@ const swaggerOptions = {
     },
     servers: [
       {
-        url: 'http://localhost:5000',
+        url: URL_DOCS_API,
       },
     ],
     components: {
@@ -73,6 +77,7 @@ app.get('/', (req: Request, res: Response): void => {
 app.use('/api/auth', AuthRoutes);
 app.use('/user', UserRoutes);
 app.use('/chat', ChatRoutes);
+app.use('/message', MessageRoutes);
 
 // Passando uma mensagem dinâmica para o middleware de erro
 app.use((req: Request, res: Response, next: NextFunction): void => {
