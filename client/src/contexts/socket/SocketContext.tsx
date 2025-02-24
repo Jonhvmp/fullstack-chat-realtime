@@ -34,7 +34,7 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ userId, children
     });
 
     socketIo.on('connect', () => {
-      console.log('Socket conectado:', socketIo.id);
+      // console.log('Socket conectado:', socketIo.id);
       reconnectAttempts.current = 0;
       if (userId) {
         socketIo.emit('setUser', userId);
