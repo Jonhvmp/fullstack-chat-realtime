@@ -1,4 +1,6 @@
 import express, { Request, Response, NextFunction } from 'express';
+const swaggerUi = require('swagger-ui-express');
+const swaggerJsDoc = require('swagger-jsdoc');
 import { errorMiddleware } from './middlewares/error.middleware';
 import { connectDB } from './config/database'
 import cors from 'cors';
@@ -9,6 +11,7 @@ import passport from 'passport';
 import './config/passport';
 import AuthRoutes from './routes/auth.routes';
 import UserRoutes from './routes/user.routes';
+import ChatRoutes from './routes/chat.routes';
 
 const app = express();
 
@@ -29,6 +32,37 @@ app.use(cors({
 }));
 app.use(passport.initialize());
 
+// Swagger
+const swaggerOptions = {
+  definition: {
+    openapi: '3.0.0',
+    info: {
+      title: 'Chat RealTime API',
+      version: '1.0.0',
+      description: 'Documentação da API backend - Jonh Alex',
+    },
+    servers: [
+      {
+        url: 'http://localhost:5000',
+      },
+    ],
+    components: {
+      securitySchemes: {
+        cookieAuth: {
+          type: 'apiKey',
+          in: 'cookie',
+          name: 'auth_token',
+        },
+      },
+    },
+  },
+  apis: ['./src/routes/*.ts'],
+};
+
+
+const swaggerDocs = swaggerJsDoc(swaggerOptions);
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
+
 
 // passando tipagem na rota ('/)
 app.get('/', (req: Request, res: Response): void => {
@@ -38,6 +72,7 @@ app.get('/', (req: Request, res: Response): void => {
 // Rotas
 app.use('/api/auth', AuthRoutes);
 app.use('/user', UserRoutes);
+app.use('/chat', ChatRoutes);
 
 // Passando uma mensagem dinâmica para o middleware de erro
 app.use((req: Request, res: Response, next: NextFunction): void => {
