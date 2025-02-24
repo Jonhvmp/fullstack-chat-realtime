@@ -152,4 +152,6 @@ router.get('/', authMiddleware, AuthController.getUsers);
  */
 router.get('/find/:id', authMiddleware, AuthController.getUserById);
 
+router.post('/list', authMiddleware, AuthController.getManyUsers);
+
 export default router;

@@ -126,4 +126,8 @@ export class AuthService {
       throw error;
     }
   }
+
+  static async getManyUsers(userIds: string[]) {
+    return await User.find({ _id: { $in: userIds } });
+  }
 }

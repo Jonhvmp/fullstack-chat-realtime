@@ -76,4 +76,19 @@ export class AuthController {
       res.status(401).json({ message: error.message });
     }
   }
+
+  static async getManyUsers(req: Request, res: Response): Promise<void> {
+    try {
+      const { userIds } = req.body;
+      if (!Array.isArray(userIds)) {
+        res.status(400).json({ message: 'userIds deve ser um array' });
+        return
+      }
+
+      const users = await AuthService.getManyUsers(userIds);
+      res.json(users);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  }
 }
