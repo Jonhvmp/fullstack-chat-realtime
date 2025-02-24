@@ -1,11 +1,14 @@
 import { Request, Response } from 'express';
 import { AuthService } from '../services/auth.service';
 import { JWT_CONFIG } from '../config/jwt.config';
+import { IUser } from '@/models/user.model';
 
 export class AuthController {
   static async register(req: Request, res: Response) {
     try {
-      const user = await AuthService.register(req.body);
+      const { user, token } = await AuthService.register(req.body);
+
+      res.cookie(JWT_CONFIG.cookieName, token, JWT_CONFIG.cookieOptions);
       res.status(201).json({ user });
     } catch (error: any) {
       res.status(400).json({ message: error.message });
@@ -26,18 +29,23 @@ export class AuthController {
 
   static async githubCallback(req: Request, res: Response) {
     try {
-      const { user, token } = await AuthService.githubAuth(req.user);
+      const user = req.user as IUser;
+      if (!user) {
+        throw new Error('Autenticação falhou');
+      }
+
+      const { token } = await AuthService.githubAuth(user);
 
       res.cookie(JWT_CONFIG.cookieName, token, JWT_CONFIG.cookieOptions);
-      res.redirect(process.env.CLIENT_URL || '/');
+      res.redirect(process.env.CLIENT_URL || 'http://localhost:3000');
     } catch (error: any) {
-      res.status(401).json({ message: error.message });
+      res.redirect(`${process.env.CLIENT_URL}/login?error=${error.message}`);
     }
   }
 
   static logout(req: Request, res: Response) {
     res.clearCookie(JWT_CONFIG.cookieName);
-    res.json({ message: 'Logged out successfully' });
+    res.json({ message: 'Sucesso ao sair da conta.' });
   }
   // get users
   static async getUsers(req: Request, res: Response) {
@@ -58,5 +66,14 @@ export class AuthController {
       res.status(404).json({ message: error.message });
     }
   }
-}
 
+  static async validateToken(req: Request, res: Response) {
+    try {
+      const token = req.cookies[JWT_CONFIG.cookieName];
+      const user = await AuthService.validateToken(token);
+      res.json({ user });
+    } catch (error: any) {
+      res.status(401).json({ message: error.message });
+    }
+  }
+}

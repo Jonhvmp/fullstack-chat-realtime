@@ -1,4 +1,6 @@
 import express, { Request, Response, NextFunction } from 'express';
+const swaggerUi = require('swagger-ui-express');
+const swaggerJsDoc = require('swagger-jsdoc');
 import { errorMiddleware } from './middlewares/error.middleware';
 import { connectDB } from './config/database'
 import cors from 'cors';
@@ -9,8 +11,13 @@ import passport from 'passport';
 import './config/passport';
 import AuthRoutes from './routes/auth.routes';
 import UserRoutes from './routes/user.routes';
+import ChatRoutes from './routes/chat.routes';
+import MessageRoutes from './routes/message.routes';
 
 const app = express();
+
+const CORS_ALLOW = process.env.CORS_ORIGIN || '';
+const URL_DOCS_API = process.env.BASE_URL || '';
 
 // Conexão com o banco de dados - MongoDb
 connectDB();
@@ -22,12 +29,43 @@ app.use(express.json());
 
 app.use(cookieParser());
 app.use(cors({
-  origin: ["http://localhost:3000"],
+  origin: [CORS_ALLOW],
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true,
 }));
 app.use(passport.initialize());
+
+// Swagger
+const swaggerOptions = {
+  definition: {
+    openapi: '3.0.0',
+    info: {
+      title: 'Chat RealTime API',
+      version: '1.0.0',
+      description: 'Documentação da API backend - Jonh Alex',
+    },
+    servers: [
+      {
+        url: URL_DOCS_API,
+      },
+    ],
+    components: {
+      securitySchemes: {
+        cookieAuth: {
+          type: 'apiKey',
+          in: 'cookie',
+          name: 'auth_token',
+        },
+      },
+    },
+  },
+  apis: ['./src/routes/*.ts'],
+};
+
+
+const swaggerDocs = swaggerJsDoc(swaggerOptions);
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 
 
 // passando tipagem na rota ('/)
@@ -38,6 +76,8 @@ app.get('/', (req: Request, res: Response): void => {
 // Rotas
 app.use('/api/auth', AuthRoutes);
 app.use('/user', UserRoutes);
+app.use('/chat', ChatRoutes);
+app.use('/message', MessageRoutes);
 
 // Passando uma mensagem dinâmica para o middleware de erro
 app.use((req: Request, res: Response, next: NextFunction): void => {

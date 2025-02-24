@@ -12,7 +12,7 @@ export const authMiddleware = async (
     const token = req.cookies[JWT_CONFIG.cookieName];
 
     if (!token) {
-      res.status(401).json({ message: 'Authentication required' });
+      res.status(401).json({ message: 'Autenticação necessária' });
       return
     }
 
@@ -20,14 +20,14 @@ export const authMiddleware = async (
     const user = await User.findById(decoded.id);
 
     if (!user || !user.isActive) {
-      res.status(401).json({ message: 'User not found or inactive' });
+      res.status(401).json({ message: 'Usuário não encontrado ou inativo' });
       return
     }
 
     req.user = user;
     next();
   } catch (error) {
-    res.status(401).json({ message: 'Invalid token' });
+    res.status(401).json({ message: 'Token Inválido' });
     return
   }
 };

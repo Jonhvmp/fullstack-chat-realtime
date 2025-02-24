@@ -8,7 +8,7 @@ export class AuthService {
     try {
       const existingUser = await User.findOne({ email: userData.email });
       if (existingUser) {
-        throw new Error('Email já cadastrado.');
+        throw new Error('Email já cadastrado! Faça login.');
       }
 
       if (!userData.password) {
@@ -19,6 +19,13 @@ export class AuthService {
         throw new Error('Senha deve ter no mínimo 6 caracteres.');
       }
 
+      if (userData.authProviders && userData.authProviders.length > 0) {
+        const githubProvider = userData.authProviders.find(provider => provider.provider === 'github');
+        if (githubProvider) {
+          throw new Error('Não é possível registrar um usuário com autenticação do GitHub, faça login com GitHub.');
+        }
+      }
+
       const user = new User({
         ...userData,
         roles: ['user'],
@@ -26,7 +33,12 @@ export class AuthService {
       });
 
       await user.save();
-      return user;
+
+      const token = jwt.sign({ id: user._id }, JWT_CONFIG.secret, {
+        expiresIn: JWT_CONFIG.expiresIn
+      } as SignOptions);
+
+      return { user, token };
     } catch (error) {
       throw error;
     }
@@ -57,44 +69,13 @@ export class AuthService {
     }
   }
 
-  static async githubAuth(profile: any) {
+  static async githubAuth(user: IUser) {
     try {
-      let user = await User.findOne({
-        'authProviders.provider': 'github',
-        'authProviders.providerId': profile.id
-      });
-
       if (!user) {
-        user = await User.findOne({ email: profile.email });
-
-        if (user) {
-          //  Adiciona autenticação do GitHub ao usuário existente
-          user.authProviders.push({
-            provider: 'github',
-            providerId: profile.id,
-            profile: profile
-          });
-        } else {
-          // Cria um novo usuário com autenticação do GitHub
-          user = new User({
-            name: profile.name || profile.username,
-            email: profile.email,
-            roles: ['user'],
-            authProviders: [{
-              provider: 'github',
-              providerId: profile.id,
-              profile: profile
-            }]
-          });
-        }
-
-        await user.save();
+        throw new Error('Dados do usuário não fornecidos');
       }
 
-      user.lastLogin = new Date();
-      await user.save();
-
-      const token = jwt.sign({ id: user._id }, JWT_CONFIG.secret, {
+      const token = jwt.sign({ id: user._id }, JWT_CONFIG.secret as jwt.Secret, {
         expiresIn: JWT_CONFIG.expiresIn
       } as SignOptions);
 
@@ -122,6 +103,24 @@ export class AuthService {
       if (!user) {
         throw new Error('Usuário não encontrado!');
       }
+      return user;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // validate token a partir do token
+  static async validateToken(token: string) {
+    try {
+      const payload = jwt.verify(token, JWT_CONFIG.secret) as { id: string };
+      const user = await User
+        .findById(payload.id)
+        .select('-password')
+
+      if (!user) {
+        throw new Error('Usuário não encontrado!');
+      }
+
       return user;
     } catch (error) {
       throw error;
