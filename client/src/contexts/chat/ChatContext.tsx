@@ -7,10 +7,12 @@ import {
   useState,
   useCallback,
   useEffect,
+  useRef,
 } from "react";
 import api from "@/services/api";
 import { useSocket } from "@/contexts/socket/SocketContext";
 import { useAuth } from "@/contexts/auth/AuthContext";
+import { unstable_batchedUpdates } from 'react-dom';
 
 // -----------------------------------------
 // Tipagens
@@ -67,6 +69,11 @@ interface ChatContextData {
 
   // MAPA: chatId -> informação do último recado
   lastMessages: Record<string, LastMessage>;
+
+  // Gerenciamento de digitação
+  typingUsers: Record<string, string[]>;
+  startTyping: (chatId: string) => void;
+  stopTyping: (chatId: string) => void;
 }
 
 interface ChatProviderProps {
@@ -87,6 +94,10 @@ export function ChatProvider({ children }: ChatProviderProps) {
     Record<string, LastMessage>
   >({});
 
+  // Armazena usuários que estão digitando
+  const [typingUsers, setTypingUsers] = useState<Record<string, string[]>>({});
+  const typingTimeoutRef = useRef<Record<string, NodeJS.Timeout>>({});
+
   const { socket } = useSocket();
   const { user } = useAuth();
 
@@ -102,19 +113,32 @@ export function ChatProvider({ children }: ChatProviderProps) {
     }
   }, []);
 
+  const handleNewMessage = useCallback((newMessage: Message) => {
+    unstable_batchedUpdates(() => {
+      setMessages(prev => [...prev, newMessage]);
+
+      // Atualizar lastMessages em batch
+      if (user?._id) {
+        setLastMessages(prev => ({
+          ...prev,
+          [newMessage.chat]: {
+            chatId: newMessage.chat,
+            content: newMessage.content,
+            createdAt: newMessage.createdAt,
+            unreadCount: prev[newMessage.chat]?.unreadCount || 0
+          }
+        }));
+      }
+    });
+  }, [user?._id]);
+
   // -------------------------
   // Efeitos de socket
   // -------------------------
   useEffect(() => {
     if (!socket) return;
 
-    // Quando chega uma nova mensagem
-    socket.on("messageReceived", (newMessage: Message) => {
-      // Se é do chat atual, insere no estado de messages
-      if (currentChat && newMessage.chat === currentChat._id) {
-        setMessages((prev) => [...prev, newMessage]);
-      }
-    });
+    socket.on("messageReceived", handleNewMessage);
 
     // Lista de IDs online
     socket.on("onlineUsers", (userIds: string[]) => {
@@ -122,11 +146,39 @@ export function ChatProvider({ children }: ChatProviderProps) {
       setOnlineUserIds(userIds);
     });
 
+    // Quando um usuário começa a digitar
+    socket.on("userTyping", ({ userId, chatId }) => {
+      console.log("Recebido userTyping:", { userId, chatId });
+      setTypingUsers(prev => {
+        const newTypingUsers = {
+          ...prev,
+          [chatId]: [...(prev[chatId] || []), userId]
+        };
+        console.log("Novo estado de typingUsers:", newTypingUsers);
+        return newTypingUsers;
+      });
+    });
+
+    // Quando um usuário para de digitar
+    socket.on("userStoppedTyping", ({ userId, chatId }) => {
+      console.log("Recebido userStoppedTyping:", { userId, chatId });
+      setTypingUsers(prev => {
+        const newTypingUsers = {
+          ...prev,
+          [chatId]: (prev[chatId] || []).filter(id => id !== userId)
+        };
+        console.log("Novo estado de typingUsers após parar:", newTypingUsers);
+        return newTypingUsers;
+      });
+    });
+
     return () => {
-      socket.off("messageReceived");
+      socket.off("messageReceived", handleNewMessage);
       socket.off("onlineUsers");
+      socket.off("userTyping");
+      socket.off("userStoppedTyping");
     };
-  }, [socket, currentChat]);
+  }, [socket, handleNewMessage]);
 
   // Carrega infos de onlineUsers
   useEffect(() => {
@@ -285,6 +337,64 @@ export function ChatProvider({ children }: ChatProviderProps) {
     []
   );
 
+  // -------------------------
+  // stopTyping
+  // -------------------------
+  const stopTyping = useCallback((chatId: string) => {
+    if (!socket || !user?._id) {
+      console.log("Socket ou usuário não disponível para stop typing");
+      return;
+    }
+
+    // Limpa o timeout ao parar de digitar
+    if (typingTimeoutRef.current[chatId]) {
+      clearTimeout(typingTimeoutRef.current[chatId]);
+      delete typingTimeoutRef.current[chatId];
+    }
+
+    console.log("Emitindo stopTyping...", { chatId, userId: user._id });
+    socket.emit("stopTyping", { chatId, userId: user._id });
+  }, [socket, user?._id]);
+
+  // -------------------------
+  // startTyping
+  // -------------------------
+  const startTyping = useCallback((chatId: string) => {
+    if (!socket || !user?._id) {
+      console.log("Socket ou usuário não disponível para typing");
+      return;
+    }
+
+    // Adicionar verificação para evitar eventos duplicados
+    if (typingUsers[chatId]?.includes(user._id)) {
+      // Se já está digitando, apenas renova o timeout
+      if (typingTimeoutRef.current[chatId]) {
+        clearTimeout(typingTimeoutRef.current[chatId]);
+      }
+    } else {
+      // Se não está digitando ainda, emite o evento
+      console.log("Emitindo typing...", { chatId, userId: user._id });
+      socket.emit("typing", { chatId, userId: user._id });
+    }
+
+    // Define novo timeout para parar de digitar
+    typingTimeoutRef.current[chatId] = setTimeout(() => {
+      console.log("Timeout atingido, parando de digitar...");
+      stopTyping(chatId);
+    }, 3000);
+  }, [socket, user?._id, stopTyping, typingUsers]); // Adicionar typingUsers como dependência
+
+  // Cleanup dos timeouts quando o componente desmontar
+  useEffect(() => {
+    return () => {
+      // Limpa todos os timeouts pendentes
+      Object.values(typingTimeoutRef.current).forEach(timeout => {
+        clearTimeout(timeout);
+      });
+      typingTimeoutRef.current = {};
+    };
+  }, []);
+
   return (
     <ChatContext.Provider
       value={{
@@ -301,6 +411,10 @@ export function ChatProvider({ children }: ChatProviderProps) {
         createChatWithUser,
         // Expondo lastMessages
         lastMessages,
+        // Expondo typingUsers
+        typingUsers,
+        startTyping,
+        stopTyping,
       }}
     >
       {children}

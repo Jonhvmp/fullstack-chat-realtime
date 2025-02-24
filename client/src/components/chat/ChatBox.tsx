@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { Message, useChat } from "@/contexts/chat/ChatContext";
 import { useAuth } from "@/contexts/auth/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -7,9 +7,20 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { UserCircle } from "lucide-react";
 import DOMPurify from 'dompurify';
+import { debounce } from "lodash";
 
 export function ChatBox() {
-  const { currentChat, messages, sendMessage, fetchMessages, markMessagesAsRead, setCurrentChat } = useChat();
+  const {
+    currentChat,
+    messages,
+    sendMessage,
+    fetchMessages,
+    markMessagesAsRead,
+    setCurrentChat,
+    typingUsers,
+    startTyping,
+    stopTyping
+  } = useChat();
   const { user } = useAuth();
   const [newMessage, setNewMessage] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -48,6 +59,15 @@ export function ChatBox() {
     scrollRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  // Adicionar cleanup do typing quando componente desmontar
+  useEffect(() => {
+    return () => {
+      if (currentChat?._id) {
+        stopTyping(currentChat._id);
+      }
+    };
+  }, [currentChat?._id, stopTyping]);
+
   const sanitizeMessage = (content: string) => {
     return DOMPurify.sanitize(content.trim()).slice(0, 1000); // limite de 1000 caracteres
   };
@@ -80,6 +100,9 @@ export function ChatBox() {
     }
 
     try {
+      // Para o indicador de digitação ao enviar
+      stopTyping(currentChat._id);
+
       const sanitizedMessage = sanitizeMessage(newMessage);
       await sendMessage(currentChat._id, user._id, sanitizedMessage);
       setNewMessage("");
@@ -87,6 +110,59 @@ export function ChatBox() {
     } catch (error) {
       console.error("Erro ao enviar mensagem:", error);
     }
+  };
+
+  // Adicionar debounce para o handleTyping
+  const debouncedStartTyping = useCallback((chatId: string) => {
+    debounce(() => {
+      if (chatId) {
+        startTyping(chatId);
+      }
+    }, 300)();
+  }, [startTyping]);
+
+  const handleTyping = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setNewMessage(e.target.value);
+    if (currentChat?._id && user?._id) {
+      debouncedStartTyping(currentChat._id);
+    }
+  };
+
+  // Atualizar renderTypingIndicator para debug
+  const renderTypingIndicator = () => {
+    if (!currentChat) {
+      console.log("Sem chat atual");
+      return null;
+    }
+
+    console.log("Estado atual de typingUsers:", typingUsers);
+    const typingUserIds = typingUsers[currentChat._id] || [];
+    console.log("Usuários digitando no chat atual:", typingUserIds);
+
+    if (typingUserIds.length === 0) {
+      console.log("Nenhum usuário digitando");
+      return null;
+    }
+
+    const typingMembers = currentChat.members.filter(
+      member => typingUserIds.includes(member._id) && member._id !== user?._id
+    );
+    console.log("Membros encontrados digitando:", typingMembers);
+
+    return (
+      <div className="flex items-center gap-2 text-sm text-muted-foreground px-4 py-2">
+        <div className="flex gap-1">
+          <span className="animate-bounce">•</span>
+          <span className="animate-bounce delay-100">•</span>
+          <span className="animate-bounce delay-200">•</span>
+        </div>
+        <span>
+          {typingMembers.map(member => member.name).join(", ")}
+          {typingMembers.length === 1 ? " está " : " estão "}
+          digitando...
+        </span>
+      </div>
+    );
   };
 
   if (!currentChat) {
@@ -158,6 +234,7 @@ export function ChatBox() {
           ) : (
             messages.map(renderMessage)
           )}
+          {renderTypingIndicator()}
           <div ref={scrollRef} />
         </div>
       </ScrollArea>
@@ -166,7 +243,7 @@ export function ChatBox() {
         <div className="flex gap-2 max-w-3xl mx-auto">
           <Input
             value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
+            onChange={handleTyping}
             placeholder="Digite sua mensagem..."
             maxLength={1000}
             className="flex-1"
