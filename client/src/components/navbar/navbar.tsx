@@ -121,7 +121,12 @@ const Navbar = () => {
               <div className="px-4 py-2 space-y-2">
                 {isAuthenticated && (
                   <>
-                    <Button variant="outline" className="w-full" asChild>
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      asChild
+                      onClick={() => setIsMenuOpen(false)}
+                    >
                       <Link href="/chat">Chat</Link>
                     </Button>
                     <DropdownMenu>
@@ -158,6 +163,7 @@ const Navbar = () => {
                       variant="ghost"
                       className="w-full"
                       asChild
+                      onClick={() => setIsMenuOpen(false)}
                     >
                       <Link href="/user">Configurações</Link>
                     </Button>
@@ -175,10 +181,18 @@ const Navbar = () => {
                 ) : (
                   <>
                     <Button variant="ghost" className="w-full" asChild>
-                      <Link href="/login">Entrar</Link>
+                        <Link
+                          href="/login"
+                          onClick={() => setIsMenuOpen(false)}
+                        >
+                          Entrar</Link>
                     </Button>
                     <Button className="w-full" asChild>
-                      <Link href="/register">Registrar</Link>
+                        <Link
+                          href="/register"
+                          onClick={() => setIsMenuOpen(false)}
+                        >
+                          Registrar</Link>
                     </Button>
                   </>
                 )}

@@ -58,6 +58,14 @@ export default function UserPage() {
     }
 
     await disable2FA(twoFaCode);
+    if (user) {
+      const updatedUserData = {
+        name: user.name,
+        email: user.email,
+        twoFactorEnabled: false
+      } as const;
+      updateUser(updatedUserData);
+    }
     setDialogOpen(false);
     setConfirmDisable(false);
   };
