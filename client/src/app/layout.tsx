@@ -6,6 +6,7 @@ import { AuthProvider } from "@/contexts/auth/AuthContext";
 import { Navbar } from "@/components/navbar/navbar";
 import { ClientProviders } from "@src/components/ClientProviders";
 import { Toaster } from "sonner";
+import { TokenInjector } from "@/components/TokenInjector";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -28,18 +29,19 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="h-full">
+    <html lang="en" className="min-h-screen">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased h-full`}
+        className={`${geistSans.variable} ${geistMono.variable} min-h-screen antialiased`}
       >
         <AuthProvider>
+          <TokenInjector />
           <ClientProviders>
-              <div className="flex flex-col h-full">
-                <Navbar />
-                <main className="flex-1 overflow-hidden">{children}</main>
-            </div>
-              <Toaster richColors position="bottom-right" />
-            </ClientProviders>
+              <Navbar />
+            <main>
+              {children}
+            </main>
+            <Toaster richColors position="bottom-right" />
+          </ClientProviders>
         </AuthProvider>
       </body>
     </html>

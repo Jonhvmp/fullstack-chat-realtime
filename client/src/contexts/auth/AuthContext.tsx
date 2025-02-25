@@ -5,39 +5,66 @@ import { useRouter } from 'next/navigation'
 import axios from 'axios'
 import { IUser, AuthContextType } from './types'
 import api from '@src/services/api'
-const AuthContext = createContext<AuthContextType>({} as AuthContextType)
 
+const AuthContext = createContext<AuthContextType>({} as AuthContextType)
 const API_URL = process.env.NEXT_PUBLIC_SERVER_URL
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<IUser | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const router = useRouter()
+
+  const validateAuth = async (token?: string) => {
+    try {
+      const config = {
+        withCredentials: true,
+        ...(token && {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+      };
+
+      const response = await axios.get(`${API_URL}/api/auth/validate-token`, config);
+      return { success: true, user: response.data.user };
+    } catch (error) {
+      return { success: false, error };
+    }
+  };
 
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const response = await axios.get(`${API_URL}/api/auth/validate-token`, {
-          withCredentials: true
-        })
-        setUser(response.data.user)
-      } catch (error) {
-        // Se for erro 401, apenas limpa o usuário silenciosamente
-        if (axios.isAxiosError(error) && error.response?.status === 401) {
-          setUser(null);
-        } else {
-          console.error('Erro ao verificar autenticação:', error)
-          setUser(null)
-        }
-      } finally {
-        setLoading(false)
-      }
-    }
+        // Primeiro tenta com cookie
+        let authResult = await validateAuth();
 
-    checkAuth()
-  }, [])
+        // Se falhar, tenta com localStorage
+        if (!authResult.success) {
+          const storedToken = localStorage.getItem('auth_token');
+          if (storedToken) {
+            authResult = await validateAuth(storedToken);
+          }
+        }
+
+        if (authResult.success && authResult.user) {
+          setUser(authResult.user);
+        } else {
+          setUser(null);
+          localStorage.removeItem('auth_token');
+        }
+      } catch (err) {
+        console.error('Erro na verificação de autenticação:', err);
+        setUser(null);
+        setError('Erro ao verificar autenticação');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkAuth();
+  }, []);
 
   const login = async (email: string, password: string, token2FA?: string) => {
+    setError(null);
     try {
       const response = await axios.post(
         `${API_URL}/api/auth/login`,
@@ -49,58 +76,71 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return { require2FA: true };
       }
 
+      if (response.data.token) {
+        localStorage.setItem('auth_token', response.data.token);
+      }
+
       setUser(response.data.user);
       return { success: true, user: response.data.user };
 
-    } catch (error) {
-      if (axios.isAxiosError(error) && error.response?.status === 206) {
-        return { require2FA: true };
-      }
-      throw error;
+    } catch (err) {
+      const errorMessage = axios.isAxiosError(err) && err.response?.data?.message ? err.response.data.message : 'Erro ao fazer login';
+      setError(errorMessage);
+      throw new Error(errorMessage);
     }
   };
 
-  const SignInOrSignUpWithGithub = async () => {
-    window.location.href = `${API_URL}/api/auth/github`;
-  }
-
   const logout = async () => {
     try {
-      await axios.post(`${API_URL}/api/auth/logout`, {}, { withCredentials: true })
-      setUser(null)
-
-      setTimeout(() => {
-        router.push('/')
-      }, 500)
-    } catch (error) {
-      console.error(error)
+      await api.post('/api/auth/logout');
+      localStorage.removeItem('auth_token');
+      setUser(null);
+      router.push('/');
+    } catch (err) {
+      console.error('Erro ao fazer logout:', err);
+      // Mesmo com erro, limpa os dados locais
+      localStorage.removeItem('auth_token');
+      setUser(null);
+      router.push('/');
     }
-  }
+  };
 
   const updateUser = async (userData: { name?: string; email?: string }) => {
     try {
       const response = await api.patch('/user/update', userData);
       setUser(response.data.user);
       return response.data;
-    } catch (error) {
-      throw error;
+    } catch (err) {
+      const errorMessage = axios.isAxiosError(err) && err.response?.data?.message ? err.response.data.message : 'Erro ao atualizar usuário';
+      setError(errorMessage);
+      throw new Error(errorMessage);
     }
   };
 
+  const value = {
+    user,
+    login,
+    logout,
+    SignInOrSignUpWithGithub: async () => {
+      window.location.href = `${API_URL}/api/auth/github`;
+    },
+    isAuthenticated: !!user,
+    isLoading: loading,
+    error,
+    updateUser,
+  };
+
   return (
-    <AuthContext.Provider value={{
-      user,
-      login,
-      logout,
-      SignInOrSignUpWithGithub,
-      isAuthenticated: !!user,
-      isLoading: loading,
-      error: null,
-      updateUser,
-    }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
-  )
-}
+  );
+};
 
-export const useAuth = () => useContext(AuthContext)
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth deve ser usado dentro de um AuthProvider');
+  }
+  return context;
+};

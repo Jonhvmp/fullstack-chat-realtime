@@ -8,8 +8,12 @@ export class AuthController {
     try {
       const { user, token } = await AuthService.register(req.body);
 
+      // Sempre envia o token tanto via cookie quanto na resposta
       res.cookie(JWT_CONFIG.cookieName, token, JWT_CONFIG.cookieOptions);
-      res.status(201).json({ user });
+      res.status(201).json({
+        user,
+        token // Sempre incluir o token na resposta
+      });
     } catch (error: any) {
       res.status(400).json({ message: error.message });
     }
@@ -40,8 +44,12 @@ export class AuthController {
         }
       }
 
+      // Sempre envia o token tanto via cookie quanto na resposta
       res.cookie(JWT_CONFIG.cookieName, token, JWT_CONFIG.cookieOptions);
-      res.json({ user });
+      res.json({
+        user,
+        token // Sempre incluir o token na resposta
+      });
     } catch (error: any) {
       res.status(401).json({
         message: error.message,
@@ -59,8 +67,9 @@ export class AuthController {
 
       const { token } = await AuthService.githubAuth(user);
 
+      // Sempre envia o token tanto via cookie quanto adiciona à URL de redirecionamento
       res.cookie(JWT_CONFIG.cookieName, token, JWT_CONFIG.cookieOptions);
-      res.redirect(process.env.CLIENT_URL || 'http://localhost:3000');
+      res.redirect(`${process.env.CLIENT_URL || 'http://localhost:3000'}?token=${token}`);
     } catch (error: any) {
       res.redirect(`${process.env.CLIENT_URL}/login?error=${error.message}`);
     }

@@ -14,6 +14,20 @@ const router = Router();
 
 /**
  * @swagger
+ * components:
+ *   securitySchemes:
+ *     cookieAuth:
+ *       type: apiKey
+ *       in: cookie
+ *       name: auth_token
+ *     bearerAuth:
+ *       type: http
+ *       scheme: bearer
+ *       bearerFormat: JWT
+ */
+
+/**
+ * @swagger
  * /api/auth/register:
  *   post:
  *     summary: Registrar um novo usuário
@@ -41,6 +55,10 @@ const router = Router();
  *                 type: string
  *                 format: password
  *                 description: Senha do usuário (mín. 6 caracteres)
+ *               tokenType:
+ *                 type: string
+ *                 enum: [cookie, bearer]
+ *                 description: Tipo de token desejado (cookie ou bearer)
  *           examples:
  *             ExemploRequisicao:
  *               summary: Exemplo de corpo de requisição
@@ -71,6 +89,9 @@ const router = Router();
  *                         type: string
  *                     isActive:
  *                       type: boolean
+ *                 token:
+ *                   type: string
+ *                   description: Retornado apenas quando tokenType é 'bearer'
  *             examples:
  *               ExemploResposta:
  *                 summary: Exemplo de retorno bem-sucedido
@@ -102,7 +123,7 @@ router.post('/register', AuthController.register);
  * /api/auth/login:
  *   post:
  *     summary: Realizar login
- *     description: Autentica o usuário e retorna um token de sessão via cookie.
+ *     description: Autentica o usuário e retorna um token JWT tanto via cookie quanto na resposta.
  *     tags: [Auth]
  *     requestBody:
  *       required: true
@@ -120,6 +141,10 @@ router.post('/register', AuthController.register);
  *               password:
  *                 type: string
  *                 format: password
+ *               tokenType:
+ *                 type: string
+ *                 enum: [cookie, bearer]
+ *                 description: Tipo de token desejado (cookie ou bearer)
  *           examples:
  *             ExemploRequisicao:
  *               summary: Exemplo de corpo de requisição
@@ -149,6 +174,9 @@ router.post('/register', AuthController.register);
  *                         type: string
  *                     isActive:
  *                       type: boolean
+ *                 token:
+ *                   type: string
+ *                   description: Token JWT para autenticação via Bearer
  *             examples:
  *               ExemploResposta:
  *                 value:

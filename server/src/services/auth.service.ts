@@ -133,13 +133,13 @@ export class AuthService {
   }
 
   static async enable2FA(userId: string) {
-    const secret = speakeasy.generateSecret({
-      name: 'Chat RealTime (user ' + userId + ')',
-      length: 20,
-    });
-
     const user = await User.findById(userId);
     if (!user) throw new Error('Usuário não encontrado');
+
+    const secret = speakeasy.generateSecret({
+      name: `Chat RealTime (${user.name || 'Usuário'})`,
+      length: 20,
+    });
 
     user.twoFactorSecret = secret.base32;
     await user.save();

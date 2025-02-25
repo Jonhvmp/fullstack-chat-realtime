@@ -1,7 +1,7 @@
 export interface IUser {
   _id: string;
-  name: string;
-  email: string;
+  name?: string;
+  email?: string;
   roles: string[];
   twoFactorEnabled?: boolean;
   lastLogin?: Date;

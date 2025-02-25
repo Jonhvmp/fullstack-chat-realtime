@@ -69,6 +69,9 @@ export const use2FA = (initialEnabled: boolean = false) => {
       setTwoFaEnabled(false);
       setMessage("2FA desativado com sucesso!");
       setTwoFaCode("");
+      // Limpar outros estados relacionados ao 2FA
+      setQrCodeImage("");
+      setOtpauthUrl("");
     } catch (error: unknown) {
       if (error instanceof Error) {
         setMessage(error.message || "Erro ao desativar 2FA");

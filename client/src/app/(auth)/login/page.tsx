@@ -83,54 +83,72 @@ export default function LoginPage() {
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-50">
-      <Card className="w-full max-w-md p-4">
-        <CardHeader>
-          <CardTitle className='text-center'>Login</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {error && <div className="mb-4 text-red-500">{error}</div>}
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="mt-1"
-              />
-            </div>
-            <div>
-              <Label htmlFor="password">Senha</Label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                className="mt-1"
-              />
-            </div>
-            <Button type="submit" className="w-full bg-green-400 text-black hover:bg-green-500">
-              Entrar
-            </Button>
-          </form>
+      <div className="w-full max-w-md px-4 py-8">
+        <Card className="w-full shadow-lg">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-center text-xl">Login</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {error && <div className="mb-4 p-2 bg-red-50 text-red-500 rounded">{error}</div>}
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email" className="text-sm font-medium">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  className="w-full"
+                  placeholder="seu@email.com"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="password" className="text-sm font-medium">Senha</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className="w-full"
+                  placeholder="••••••••"
+                />
+              </div>
+              <Button
+                type="submit"
+                className="w-full py-2 bg-green-400 hover:bg-green-500 text-black font-medium transition-colors"
+              >
+                Entrar
+              </Button>
+            </form>
 
-          <div className="mt-4">
-            <Button onClick={handleGithubLogin} className="w-full bg-black text-white">
-              Entrar com Github <GithubIcon className="w-6 h-6 inline-block" />
-            </Button>
-          </div>
+            <div className="mt-4 relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-200"></div>
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-2 bg-white text-gray-500">ou</span>
+              </div>
+            </div>
 
-          <div className="mt-4 text-center">
-            <span>Não tem uma conta?</span>
-            <Button variant="link" asChild>
-              <Link href="/register" className='text-blue-700'>Registrar</Link>
+            <Button
+              onClick={handleGithubLogin}
+              className="w-full mt-4 bg-gray-800 hover:bg-gray-900 text-white font-medium flex items-center justify-center gap-2"
+            >
+              <GithubIcon className="w-5 h-5" />
+              Entrar com Github
             </Button>
-          </div>
-        </CardContent>
-      </Card>
+
+            <div className="mt-6 text-center text-sm text-gray-600">
+              <span>Não tem uma conta?</span>{' '}
+              <Link href="/register" className="text-blue-600 hover:text-blue-800 font-medium">
+                Registrar
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       <TwoFactorAuthDialog
         open={show2FADialog}
