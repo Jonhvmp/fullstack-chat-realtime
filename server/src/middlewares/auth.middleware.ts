@@ -3,28 +3,11 @@ import jwt from 'jsonwebtoken';
 import { JWT_CONFIG } from '../config/jwt.config';
 import User from '../models/user.model';
 
-const extractTokens = (req: Request): { cookieToken?: string; bearerToken?: string } => {
-  return {
-    cookieToken: req.cookies[JWT_CONFIG.cookieName],
-    bearerToken: req.headers.authorization?.startsWith('Bearer ')
-      ? req.headers.authorization.substring(7)
-      : undefined
-  };
-};
-
-const validateToken = async (token: string): Promise<{ isValid: boolean; user?: any }> => {
-  try {
-    const decoded = jwt.verify(token, JWT_CONFIG.secret) as { id: string };
-    const user = await User.findById(decoded.id);
-
-    if (!user || !user.isActive) {
-      return { isValid: false };
-    }
-
-    return { isValid: true, user };
-  } catch (error) {
-    return { isValid: false };
+const extractToken = (req: Request): string | undefined => {
+  if (req.headers.authorization?.startsWith('Bearer ')) {
+    return req.headers.authorization.substring(7);
   }
+  return undefined;
 };
 
 export const authMiddleware = async (
@@ -33,29 +16,23 @@ export const authMiddleware = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const { cookieToken, bearerToken } = extractTokens(req);
+    const token = extractToken(req);
 
-    // Tenta validar o cookie primeiro
-    if (cookieToken) {
-      const cookieResult = await validateToken(cookieToken);
-      if (cookieResult.isValid) {
-        req.user = cookieResult.user;
-        return next();
-      }
+    if (!token) {
+      res.status(401).json({ message: 'Autenticação necessária' });
+      return;
     }
 
-    // Se o cookie falhar ou não existir, tenta o bearer token
-    if (bearerToken) {
-      const bearerResult = await validateToken(bearerToken);
-      if (bearerResult.isValid) {
-        req.user = bearerResult.user;
-        return next();
-      }
+    const decoded = jwt.verify(token, JWT_CONFIG.secret) as { id: string };
+    const user = await User.findById(decoded.id);
+
+    if (!user || !user.isActive) {
+      res.status(401).json({ message: 'Token inválido ou usuário inativo' });
+      return;
     }
 
-    // Se ambos falharem, retorna erro
-    res.status(401).json({ message: 'Autenticação necessária' });
-    return;
+    req.user = user;
+    next();
   } catch (error) {
     res.status(401).json({ message: 'Token Inválido' });
     return;

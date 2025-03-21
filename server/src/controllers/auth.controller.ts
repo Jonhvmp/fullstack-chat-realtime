@@ -1,19 +1,12 @@
 import { Request, Response } from 'express';
 import User, { IUser } from '@/models/user.model';
 import { AuthService } from '../services/auth.service';
-import { JWT_CONFIG } from '../config/jwt.config';
 
 export class AuthController {
   static async register(req: Request, res: Response) {
     try {
       const { user, token } = await AuthService.register(req.body);
-
-      // Sempre envia o token tanto via cookie quanto na resposta
-      res.cookie(JWT_CONFIG.cookieName, token, JWT_CONFIG.cookieOptions);
-      res.status(201).json({
-        user,
-        token // Sempre incluir o token na resposta
-      });
+      res.status(201).json({ user, token });
     } catch (error: any) {
       res.status(400).json({ message: error.message });
     }
@@ -44,12 +37,7 @@ export class AuthController {
         }
       }
 
-      // Sempre envia o token tanto via cookie quanto na resposta
-      res.cookie(JWT_CONFIG.cookieName, token, JWT_CONFIG.cookieOptions);
-      res.json({
-        user,
-        token // Sempre incluir o token na resposta
-      });
+      res.json({ user, token });
     } catch (error: any) {
       res.status(401).json({
         message: error.message,
@@ -66,9 +54,6 @@ export class AuthController {
       }
 
       const { token } = await AuthService.githubAuth(user);
-
-      // Sempre envia o token tanto via cookie quanto adiciona à URL de redirecionamento
-      res.cookie(JWT_CONFIG.cookieName, token, JWT_CONFIG.cookieOptions);
       res.redirect(`${process.env.CLIENT_URL || 'http://localhost:3000'}?token=${token}`);
     } catch (error: any) {
       res.redirect(`${process.env.CLIENT_URL}/login?error=${error.message}`);
@@ -76,9 +61,25 @@ export class AuthController {
   }
 
   static logout(req: Request, res: Response) {
-    res.clearCookie(JWT_CONFIG.cookieName);
     res.json({ message: 'Sucesso ao sair da conta.' });
   }
+
+  static async validateToken(req: Request, res: Response) {
+    try {
+      const authHeader = req.headers.authorization;
+      const token = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null;
+
+      if (!token) {
+        throw new Error('Token não fornecido');
+      }
+
+      const user = await AuthService.validateToken(token);
+      res.json({ user });
+    } catch (error: any) {
+      res.status(401).json({ message: error.message });
+    }
+  }
+
   // get users
   static async getUsers(req: Request, res: Response) {
     try {
@@ -96,16 +97,6 @@ export class AuthController {
       res.json({ user });
     } catch (error: any) {
       res.status(404).json({ message: error.message });
-    }
-  }
-
-  static async validateToken(req: Request, res: Response) {
-    try {
-      const token = req.cookies[JWT_CONFIG.cookieName];
-      const user = await AuthService.validateToken(token);
-      res.json({ user });
-    } catch (error: any) {
-      res.status(401).json({ message: error.message });
     }
   }
 
