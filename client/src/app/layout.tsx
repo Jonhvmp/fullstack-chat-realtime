@@ -6,7 +6,6 @@ import { AuthProvider } from "@/contexts/auth/AuthContext";
 import { Navbar } from "@/components/navbar/navbar";
 import { ClientProviders } from "@src/components/ClientProviders";
 import { Toaster } from "sonner";
-import { TokenInjector } from "@/components/TokenInjector";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -34,12 +33,9 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} min-h-screen antialiased`}
       >
         <AuthProvider>
-          <TokenInjector />
           <ClientProviders>
-              <Navbar />
-            <main>
-              {children}
-            </main>
+            <Navbar />
+            <main>{children}</main>
             <Toaster richColors position="bottom-right" />
           </ClientProviders>
         </AuthProvider>

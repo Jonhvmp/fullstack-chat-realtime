@@ -9,7 +9,7 @@ import { useChat } from '@/contexts/chat/ChatContext';
 import { Button } from '@/components/ui/button';
 import { List, X } from '@phosphor-icons/react';
 
-export default function ChatPage() {
+function ChatPage() {
   const { isAuthenticated, isLoading, user } = useAuth();
   const { fetchUserChats, currentChat } = useChat();
   const router = useRouter();
@@ -82,3 +82,5 @@ export default function ChatPage() {
     </div>
   );
 }
+
+export default(ChatPage);

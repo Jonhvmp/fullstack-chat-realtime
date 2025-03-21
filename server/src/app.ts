@@ -13,6 +13,7 @@ import AuthRoutes from './routes/auth.routes';
 import UserRoutes from './routes/user.routes';
 import ChatRoutes from './routes/chat.routes';
 import MessageRoutes from './routes/message.routes';
+import { CORS_CONFIG } from './config/cors.config';
 
 const app = express();
 
@@ -28,12 +29,7 @@ app.use(morgan('dev'));
 app.use(express.json());
 
 app.use(cookieParser());
-app.use(cors({
-  origin: process.env.CLIENT_URL || '',
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
+app.use(cors(CORS_CONFIG));
 app.use(passport.initialize());
 
 // Swagger
